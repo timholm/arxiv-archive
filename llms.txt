@@ -1,0 +1,47 @@
+# arxiv-archive
+
+> Full local mirror of arXiv CS/AI/ML papers with PostgreSQL + pgvector. Semantic search, citation graph, HTTP API.
+
+## Overview
+
+arxiv-archive is a Go binary that mirrors arXiv papers locally. It harvests metadata via OAI-PMH, fetches full text from Semantic Scholar, generates embeddings for semantic search, and indexes citation graphs. The HTTP API enables programmatic access to search, similarity, and citation data.
+
+## Capabilities
+
+- Sync ~800K arXiv papers across cs.AI, cs.CL, cs.LG, cs.SE, cs.CV, stat.ML
+- Full-text search via PostgreSQL ts_vector
+- Semantic similarity search via pgvector (1536-dim embeddings)
+- Citation graph traversal (cites / cited-by)
+- Incremental daily sync with crash recovery
+- HTTP REST API + CLI interface
+
+## API Endpoints
+
+- GET /papers/:id — Paper metadata, text, and ref counts
+- GET /papers/search?q=... — Full-text search
+- GET /papers/similar/:id — Vector similarity from paper
+- GET /papers/similar?q=... — Vector similarity from query text
+- GET /papers/:id/refs — Outgoing references
+- GET /papers/:id/cited-by — Incoming citations
+- GET /papers/recent?cat=...&days=N — Recent papers
+- GET /stats — Archive statistics
+- POST /sync — Trigger background sync
+
+## CLI Commands
+
+- archive sync — Full pipeline or individual steps
+- archive search "query" — Full-text search
+- archive similar ID_or_text — Vector similarity
+- archive read ID — Print paper
+- archive refs ID — Citation graph
+- archive serve — HTTP API server
+- archive stats — Statistics
+
+## Tech Stack
+
+Go, PostgreSQL, pgvector, OAI-PMH, Semantic Scholar API, llm-router
+
+## Links
+
+- Source: https://github.com/timholm/arxiv-archive
+- License: MIT
