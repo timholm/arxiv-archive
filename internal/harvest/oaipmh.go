@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	oaiBaseURL       = "https://export.arxiv.org/oai2"
+	oaiBaseURL       = "https://oaipmh.arxiv.org/oai"
 	oaiPollDelay     = 1 * time.Second // Polite delay between requests
 	oaiRetryDelay    = 30 * time.Second
 	oaiMaxRetries    = 5

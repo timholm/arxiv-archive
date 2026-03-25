@@ -176,13 +176,11 @@ func (db *DB) SimilarByID(ctx context.Context, arxivID string, limit int) ([]*Pa
 	rows, err := db.Pool.Query(ctx,
 		`SELECT p.arxiv_id, p.title, p.abstract, p.authors, p.categories,
 				p.published, p.updated, p.has_full_text, p.fetched_at,
-				1 - (p.embedding <=> ref.embedding) AS similarity
-		 FROM papers p, papers ref
-		 WHERE ref.arxiv_id = $1
-			AND p.arxiv_id != $1
+				1 - (p.embedding <=> (SELECT embedding FROM papers WHERE arxiv_id = $1)) AS similarity
+		 FROM papers p
+		 WHERE p.arxiv_id != $1
 			AND p.embedding IS NOT NULL
-			AND ref.embedding IS NOT NULL
-		 ORDER BY p.embedding <=> ref.embedding
+		 ORDER BY p.embedding <=> (SELECT embedding FROM papers WHERE arxiv_id = $1)
 		 LIMIT $2`,
 		arxivID, limit,
 	)

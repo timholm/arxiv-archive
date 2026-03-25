@@ -103,6 +103,12 @@ func (s *Syncer) syncMetadata(ctx context.Context) error {
 	for _, category := range s.cfg.Categories {
 		s.logger.Printf("harvesting category: %s", category)
 
+		// Convert "cs.AI" → "cs:cs:AI" for OAI-PMH set parameter.
+		oaiSet := strings.ReplaceAll(category, ".", ":") // cs.AI → cs:AI
+		if parts := strings.SplitN(category, ".", 2); len(parts) == 2 {
+			oaiSet = parts[0] + ":" + parts[0] + ":" + parts[1] // cs:cs:AI
+		}
+
 		// Check for saved resumption token
 		tokenKey := fmt.Sprintf("oai_token_%s", category)
 		resumeToken, _ := s.db.GetSyncState(ctx, tokenKey)
@@ -130,7 +136,7 @@ func (s *Syncer) syncMetadata(ctx context.Context) error {
 			default:
 			}
 
-			result, err := s.oai.Harvest(ctx, category, resumeToken, fromDate)
+			result, err := s.oai.Harvest(ctx, oaiSet, resumeToken, fromDate)
 			if err != nil {
 				// Save current token so we can resume later
 				if resumeToken != "" {

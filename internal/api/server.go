@@ -45,11 +45,11 @@ func NewServer(database *db.DB, cfg *config.Config) *Server {
 
 func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /papers/search", s.handleSearch)
-	s.mux.HandleFunc("GET /papers/similar/{id}", s.handleSimilarByID)
 	s.mux.HandleFunc("GET /papers/similar", s.handleSimilarByQuery)
 	s.mux.HandleFunc("GET /papers/recent", s.handleRecent)
-	s.mux.HandleFunc("GET /papers/{id}/refs", s.handleRefs)
-	s.mux.HandleFunc("GET /papers/{id}/cited-by", s.handleCitedBy)
+	s.mux.HandleFunc("GET /refs/{id}", s.handleRefs)
+	s.mux.HandleFunc("GET /cited-by/{id}", s.handleCitedBy)
+	s.mux.HandleFunc("GET /similar/{id}", s.handleSimilarByID)
 	s.mux.HandleFunc("GET /papers/{id}", s.handleGetPaper)
 	s.mux.HandleFunc("GET /stats", s.handleStats)
 	s.mux.HandleFunc("POST /sync", s.handleSync)
