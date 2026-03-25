@@ -167,13 +167,34 @@ func (db *DB) SearchPapers(ctx context.Context, query string, limit int) ([]*Pap
 	return papers, rows.Err()
 }
 
-// SimilarByID finds papers similar to the given paper using pgvector cosine distance.
+// SimilarByID finds papers similar to the given paper.
+// Uses pre-computed similar_papers lookup table (instant) with fallback to vector search (slow).
 func (db *DB) SimilarByID(ctx context.Context, arxivID string, limit int) ([]*Paper, error) {
 	if limit <= 0 {
 		limit = 10
 	}
 
+	// Try pre-computed lookup table first (instant)
 	rows, err := db.Pool.Query(ctx,
+		`SELECT p.arxiv_id, p.title, p.abstract, p.authors, p.categories,
+				p.published, p.updated, p.has_full_text, p.fetched_at,
+				sp.similarity
+		 FROM similar_papers sp
+		 JOIN papers p ON p.arxiv_id = sp.similar_id
+		 WHERE sp.arxiv_id = $1
+		 ORDER BY sp.similarity DESC
+		 LIMIT $2`,
+		arxivID, limit,
+	)
+	if err == nil {
+		papers, scanErr := db.scanSimilarRows(rows)
+		if scanErr == nil && len(papers) > 0 {
+			return papers, nil
+		}
+	}
+
+	// Fallback to real-time vector search (slow on RPi, ~45s)
+	rows, err = db.Pool.Query(ctx,
 		`SELECT p.arxiv_id, p.title, p.abstract, p.authors, p.categories,
 				p.published, p.updated, p.has_full_text, p.fetched_at,
 				1 - (p.embedding <=> (SELECT embedding FROM papers WHERE arxiv_id = $1)) AS similarity
@@ -187,8 +208,12 @@ func (db *DB) SimilarByID(ctx context.Context, arxivID string, limit int) ([]*Pa
 	if err != nil {
 		return nil, fmt.Errorf("similar by id: %w", err)
 	}
-	defer rows.Close()
+	return db.scanSimilarRows(rows)
+}
 
+// scanSimilarRows reads paper rows with a similarity column.
+func (db *DB) scanSimilarRows(rows pgx.Rows) ([]*Paper, error) {
+	defer rows.Close()
 	var papers []*Paper
 	for rows.Next() {
 		p := &Paper{}
